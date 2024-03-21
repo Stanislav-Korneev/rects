@@ -29,6 +29,7 @@ class RectWidget(QWidget):
         self.linkedRectWidgets = []
         self.width = 100
         self.height = 50
+        self.lastMousePosition = None
 
         self.connectionBtn = ConnectionButton(self)
         posX = int(pos.x() - self.width / 2)
@@ -41,6 +42,21 @@ class RectWidget(QWidget):
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.fillRect(self.rect(), QColor('red'))
+
+    def mousePressEvent(self, event):
+        if event.buttons() != Qt.MouseButton.LeftButton:
+            return
+        self.lastMousePosition = event.globalPosition().toPoint()
+
+    def mouseMoveEvent(self, event):
+        if event.buttons() != Qt.MouseButton.LeftButton or self.lastMousePosition is None:
+            return
+        delta = event.globalPosition().toPoint() - self.lastMousePosition
+        self.lastMousePosition = event.globalPosition().toPoint()
+        self.move(self.pos() + delta)
+
+    def mouseReleaseEvent(self, event):
+        self.lastMousePosition = None
 
 
 class Scene(QWidget):
