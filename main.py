@@ -39,14 +39,6 @@ class RectWidget(QWidget):
 
         self.show()
 
-    def hasRectCollisions(self, target):
-        hasWindowCollision = not self.parent().rect().contains(target)
-        if hasWindowCollision:
-            return True
-        rects = self.parent().findChildren(RectWidget)
-        hasRectCollision = any(rect != self and rect.geometry().intersects(target) for rect in rects)
-        return hasRectCollision
-
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.fillRect(self.rect(), QColor('red'))
@@ -62,7 +54,7 @@ class RectWidget(QWidget):
 
         delta = event.globalPosition().toPoint() - self.lastMousePosition
         rect = QRect(self.pos() + delta, QSize(self.width, self.height))
-        if self.hasRectCollisions(rect):
+        if self.parent().hasRectCollisions(self, rect):
             return
         self.lastMousePosition = event.globalPosition().toPoint()
         self.move(self.pos() + delta)
@@ -77,7 +69,19 @@ class Scene(QWidget):
         self.connectWidget = None
 
     def addRect(self, pos):
+        size = QSize(100, 50)
+        rect = QRect(pos, size)
+        if self.hasRectCollisions(None, rect):
+            return
         RectWidget(self, pos)
+
+    def hasRectCollisions(self, targetWidget, targetRect):
+        hasWindowCollision = not self.rect().contains(targetRect)
+        if hasWindowCollision:
+            return True
+        rects = self.findChildren(RectWidget)
+        hasRectCollision = any((not targetWidget or rect != targetWidget) and rect.geometry().intersects(targetRect) for rect in rects)
+        return hasRectCollision
 
     def paintEvent(self, event):
         painter = QPainter(self)
