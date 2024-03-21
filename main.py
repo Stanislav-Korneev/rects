@@ -39,6 +39,14 @@ class RectWidget(QWidget):
 
         self.show()
 
+    def hasRectCollisions(self, target):
+        hasWindowCollision = not self.parent().rect().contains(target)
+        if hasWindowCollision:
+            return True
+        rects = self.parent().findChildren(RectWidget)
+        hasRectCollision = any(rect != self and rect.geometry().intersects(target) for rect in rects)
+        return hasRectCollision
+
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.fillRect(self.rect(), QColor('red'))
@@ -51,7 +59,11 @@ class RectWidget(QWidget):
     def mouseMoveEvent(self, event):
         if event.buttons() != Qt.MouseButton.LeftButton or self.lastMousePosition is None:
             return
+
         delta = event.globalPosition().toPoint() - self.lastMousePosition
+        rect = QRect(self.pos() + delta, QSize(self.width, self.height))
+        if self.hasRectCollisions(rect):
+            return
         self.lastMousePosition = event.globalPosition().toPoint()
         self.move(self.pos() + delta)
 
