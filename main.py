@@ -9,6 +9,7 @@ from PyQt6.QtWidgets import QApplication, QVBoxLayout, QWidget, QPushButton
 
 class RectWidget(QWidget):
     movementSignal = pyqtSignal(object, QMouseEvent)
+    connectionSignal = pyqtSignal(object)
 
     def __init__(self, parent=None, pos=QPoint(50, 50), config=None):
         super().__init__(parent)
@@ -29,8 +30,11 @@ class RectWidget(QWidget):
         btnPosX = int((self.width - connectionBtnSize) / 2)
         btnPosY = int((self.height - connectionBtnSize) / 2)
         connectionBtn.setGeometry(btnPosX, btnPosY, connectionBtnSize, connectionBtnSize)
-        connectionBtn.clicked.connect(lambda: self.parent().handleConnection(self))
+        connectionBtn.clicked.connect(self.emitConnectionSignal)
         connectionBtn.show()
+
+    def emitConnectionSignal(self):
+        self.connectionSignal.emit(self)
 
     def positionSelf(self, pos):
         posX = int(pos.x() - self.width / 2)
@@ -69,6 +73,7 @@ class Scene(QWidget):
             return
         newWidget = RectWidget(self, pos, self.config)
         newWidget.movementSignal.connect(self.handleMovementSignal)
+        newWidget.connectionSignal.connect(self.handleConnection)
 
     def handleMovementSignal(self, rectWidget, event):
         delta = event.globalPosition().toPoint() - rectWidget.lastMousePosition
