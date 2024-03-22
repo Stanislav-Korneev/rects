@@ -6,6 +6,7 @@ from PyQt6.QtWidgets import QWidget, QPushButton
 
 
 class RectWidget(QWidget):
+
     movementSignal = pyqtSignal(object, QMouseEvent)
     connectionSignal = pyqtSignal(object)
 
@@ -15,7 +16,9 @@ class RectWidget(QWidget):
         self.width = config['rectWidth']
         self.height = config['rectHeight']
         self.color = random.choice(config['rectColors'])
+        # when we add connection, the "initiator" remembers his connections in linkedRectWidgets. NOT vice versa
         self.linkedRectWidgets = []
+        # we need lastMousePosition to calculate movement
         self.lastMousePosition = None
 
         self.createConnectionButton()
@@ -37,6 +40,7 @@ class RectWidget(QWidget):
         self.setGeometry(QRect(QPoint(posX, posY), QSize(self.width, self.height)))
 
     def handleMove(self, eventPosition, delta):
+        # this method receives command to move from Scene and implements it
         self.lastMousePosition = eventPosition
         self.move(self.pos() + delta)
 

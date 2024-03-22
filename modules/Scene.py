@@ -8,6 +8,8 @@ from modules.RectWidget import RectWidget
 class Scene(QWidget):
     def __init__(self, config):
         super().__init__()
+        # when you click the central button of RectWidget and connectWidget == None, it gets recorded to connectWidget
+        # otherwise it will use connectWidget to add/remove connection between them
         self.connectWidget = None
         self.config = config
 
@@ -19,6 +21,7 @@ class Scene(QWidget):
 
     def addRect(self, pos):
         size = QSize(self.config['rectWidth'], self.config['rectHeight'])
+        # we need testRect to be sure that there's enough place for a real widget to appear
         testRect = QRect(pos, size)
         if self.hasRectCollisions(None, testRect):
             return
@@ -27,8 +30,11 @@ class Scene(QWidget):
         newWidget.connectionSignal.connect(self.handleConnection)
 
     def handleMovementSignal(self, rectWidget, event):
+        # we're handling here the signal that one of the rects (rectWidget) gave us.
+        # the event is QMouseEvent and contains info about cursor position
         eventPosition = event.globalPosition().toPoint()
         delta = eventPosition - rectWidget.lastMousePosition
+        # we need testRect to look for possible collisions while moving the rect
         testRect = QRect(rectWidget.pos() + delta, QSize(rectWidget.width, rectWidget.height))
         if self.hasRectCollisions(rectWidget, testRect):
             return
@@ -36,6 +42,8 @@ class Scene(QWidget):
         self.update()
 
     def hasRectCollisions(self, testWidget, testRect):
+        # testWidget is the widget that wants to move
+        # testRect simulates its movement, so we can check if it collides with anything while moving
         hasWindowCollision = not self.rect().contains(testRect)
         if hasWindowCollision:
             return True
@@ -83,9 +91,11 @@ class Scene(QWidget):
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
+            # if we click on scene but not on rects, we abort connection/disconnection process
             self.nullifyConnectWidget()
 
     def mouseDoubleClickEvent(self, event):
         if event.buttons() == Qt.MouseButton.LeftButton:
+            # if we click on scene but not on rects, we abort connection/disconnection process
             self.nullifyConnectWidget()
             self.addRect(event.pos())
