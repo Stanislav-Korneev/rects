@@ -30,16 +30,17 @@ class RectWidget(QWidget):
         btnPosX = int((self.width - connectionBtnSize) / 2)
         btnPosY = int((self.height - connectionBtnSize) / 2)
         connectionBtn.setGeometry(btnPosX, btnPosY, connectionBtnSize, connectionBtnSize)
-        connectionBtn.clicked.connect(self.emitConnectionSignal)
+        connectionBtn.clicked.connect(lambda: self.connectionSignal.emit(self))
         connectionBtn.show()
-
-    def emitConnectionSignal(self):
-        self.connectionSignal.emit(self)
 
     def positionSelf(self, pos):
         posX = int(pos.x() - self.width / 2)
         posY = int(pos.y() - self.height / 2)
         self.setGeometry(QRect(QPoint(posX, posY), QSize(self.width, self.height)))
+
+    def handleMove(self, eventPosition, delta):
+        self.lastMousePosition = eventPosition
+        self.move(self.pos() + delta)
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -68,62 +69,40 @@ class Scene(QWidget):
 
     def addRect(self, pos):
         size = QSize(self.config['rectWidth'], self.config['rectHeight'])
-        rect = QRect(pos, size)
-        if self.hasRectCollisions(None, rect):
+        testRect = QRect(pos, size)
+        if self.hasRectCollisions(None, testRect):
             return
         newWidget = RectWidget(self, pos, self.config)
         newWidget.movementSignal.connect(self.handleMovementSignal)
         newWidget.connectionSignal.connect(self.handleConnection)
 
     def handleMovementSignal(self, rectWidget, event):
-        delta = event.globalPosition().toPoint() - rectWidget.lastMousePosition
+        eventPosition = event.globalPosition().toPoint()
+        delta = eventPosition - rectWidget.lastMousePosition
         testRect = QRect(rectWidget.pos() + delta, QSize(rectWidget.width, rectWidget.height))
         if self.hasRectCollisions(rectWidget, testRect):
             return
-        rectWidget.lastMousePosition = event.globalPosition().toPoint()
-        rectWidget.move(rectWidget.pos() + delta)
+        rectWidget.handleMove(eventPosition, delta)
         self.update()
 
     def hasRectCollisions(self, testWidget, testRect):
         hasWindowCollision = not self.rect().contains(testRect)
         if hasWindowCollision:
             return True
-        rects = self.findChildren(RectWidget)
-        hasRectCollision = any(
-            (not testWidget or rect != testWidget)
-            and rect.geometry().intersects(testRect) for rect in rects)
-        return hasRectCollision
 
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        pen = QPen(QColor(self.config['connectorColor']))
-        pen.setWidth(self.config['connectorWidth'])
-        painter.setPen(pen)
-
-        painter.fillRect(self.rect(), QColor(self.config['sceneBackground']))
-        self.drawLines(painter)
+        rectWidgets = self.findChildren(RectWidget)
+        return any(
+            (not testWidget or rectWidget != testWidget)
+            and rectWidget.geometry().intersects(testRect) for rectWidget in rectWidgets)
 
     def drawLines(self, painter):
-        for rect in self.findChildren(RectWidget):
-            for linkedRect in rect.linkedRectWidgets:
-                painter.drawLine(rect.geometry().center(), linkedRect.geometry().center())
-
-    def mousePressEvent(self, event):
-        if event.button() == Qt.MouseButton.LeftButton:
-            self.connectWidget = None
-
-    def mouseDoubleClickEvent(self, event):
-        if event.buttons() == Qt.MouseButton.LeftButton:
-            self.connectWidget = None
-            self.addRect(event.pos())
+        for rectWidget in self.findChildren(RectWidget):
+            for linkedRect in rectWidget.linkedRectWidgets:
+                painter.drawLine(rectWidget.geometry().center(), linkedRect.geometry().center())
 
     def handleConnection(self, targetWidget):
-        if not self.connectWidget:
+        if not self.connectWidget or self.connectWidget == targetWidget:
             self.connectWidget = targetWidget
-            return
-
-        if self.connectWidget == targetWidget:
             return
 
         connectHasTarget = targetWidget in self.connectWidget.linkedRectWidgets
@@ -138,6 +117,25 @@ class Scene(QWidget):
 
         self.connectWidget = None
         self.update()
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        pen = QPen(QColor(self.config['connectorColor']))
+        pen.setWidth(self.config['connectorWidth'])
+        painter.setPen(pen)
+
+        painter.fillRect(self.rect(), QColor(self.config['sceneBackground']))
+        self.drawLines(painter)
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.connectWidget = None
+
+    def mouseDoubleClickEvent(self, event):
+        if event.buttons() == Qt.MouseButton.LeftButton:
+            self.connectWidget = None
+            self.addRect(event.pos())
 
 
 class MainWindow(QWidget):
