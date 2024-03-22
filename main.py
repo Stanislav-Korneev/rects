@@ -3,8 +3,8 @@ import sys
 
 from PyQt6.QtWidgets import QApplication
 
-from Scene import Scene
-from MainWindow import MainWindow
+from modules.Scene import Scene
+from modules.MainWindow import MainWindow
 
 
 def application():

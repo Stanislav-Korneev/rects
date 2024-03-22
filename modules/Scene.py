@@ -2,7 +2,7 @@ from PyQt6.QtCore import Qt, QRect, QSize
 from PyQt6.QtGui import QPainter, QColor, QPen
 from PyQt6.QtWidgets import QWidget
 
-from RectWidget import RectWidget
+from modules.RectWidget import RectWidget
 
 
 class Scene(QWidget):
