@@ -67,6 +67,12 @@ class Scene(QWidget):
         self.connectWidget = None
         self.config = config
 
+    def nullifyConnectWidget(self):
+        if not self.connectWidget:
+            return
+        self.connectWidget.setStyleSheet('')
+        self.connectWidget = None
+
     def addRect(self, pos):
         size = QSize(self.config['rectWidth'], self.config['rectHeight'])
         testRect = QRect(pos, size)
@@ -115,7 +121,7 @@ class Scene(QWidget):
         else:
             self.connectWidget.linkedRectWidgets.append(targetWidget)
 
-        self.connectWidget = None
+        self.nullifyConnectWidget()
         self.update()
 
     def paintEvent(self, event):
@@ -125,16 +131,19 @@ class Scene(QWidget):
         pen.setWidth(self.config['connectorWidth'])
         painter.setPen(pen)
 
+        if self.connectWidget:
+            self.connectWidget.setStyleSheet(self.config['connectionButtonActiveStyle'])
+
         painter.fillRect(self.rect(), QColor(self.config['sceneBackground']))
         self.drawLines(painter)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
-            self.connectWidget = None
+            self.nullifyConnectWidget()
 
     def mouseDoubleClickEvent(self, event):
         if event.buttons() == Qt.MouseButton.LeftButton:
-            self.connectWidget = None
+            self.nullifyConnectWidget()
             self.addRect(event.pos())
 
 

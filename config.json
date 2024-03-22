@@ -12,5 +12,6 @@
   "rectHeight": 50,
   "rectColorsOld": ["#d954c5", "#5591ff", "#ff4d5e", "#8fffe1", "#fdff5d"],
   "rectColors": ["#c16a91", "#8984d1", "#da7e86", "#5b9f7e", "#d9ad68"],
-  "connectionButtonSize": 15
+  "connectionButtonSize": 15,
+  "connectionButtonActiveStyle": "background-color: red;border: 2px solid white;"
 }
