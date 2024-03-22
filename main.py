@@ -2,12 +2,14 @@ import json
 import random
 import sys
 
-from PyQt6.QtCore import Qt, QRect, QSize, QPoint
-from PyQt6.QtGui import QPainter, QColor, QPen
+from PyQt6.QtCore import Qt, QRect, QSize, QPoint, pyqtSignal
+from PyQt6.QtGui import QPainter, QColor, QPen, QMouseEvent
 from PyQt6.QtWidgets import QApplication, QVBoxLayout, QWidget, QPushButton
 
 
 class RectWidget(QWidget):
+    movementSignal = pyqtSignal(object, QMouseEvent)
+
     def __init__(self, parent=None, pos=QPoint(50, 50), config=None):
         super().__init__(parent)
         self.config = config
@@ -48,13 +50,7 @@ class RectWidget(QWidget):
         if event.buttons() != Qt.MouseButton.LeftButton or self.lastMousePosition is None:
             return
 
-        delta = event.globalPosition().toPoint() - self.lastMousePosition
-        rect = QRect(self.pos() + delta, QSize(self.width, self.height))
-        if self.parent().hasRectCollisions(self, rect):
-            return
-        self.lastMousePosition = event.globalPosition().toPoint()
-        self.move(self.pos() + delta)
-        self.parent().update()
+        self.movementSignal.emit(self, event)
 
     def mouseReleaseEvent(self, event):
         self.lastMousePosition = None
@@ -71,15 +67,26 @@ class Scene(QWidget):
         rect = QRect(pos, size)
         if self.hasRectCollisions(None, rect):
             return
-        RectWidget(self, pos, self.config)
+        newWidget = RectWidget(self, pos, self.config)
+        newWidget.movementSignal.connect(self.handleMovementSignal)
 
-    def hasRectCollisions(self, targetWidget, targetRect):
-        hasWindowCollision = not self.rect().contains(targetRect)
+    def handleMovementSignal(self, rectWidget, event):
+        delta = event.globalPosition().toPoint() - rectWidget.lastMousePosition
+        testRect = QRect(rectWidget.pos() + delta, QSize(rectWidget.width, rectWidget.height))
+        if self.hasRectCollisions(rectWidget, testRect):
+            return
+        rectWidget.lastMousePosition = event.globalPosition().toPoint()
+        rectWidget.move(rectWidget.pos() + delta)
+        self.update()
+
+    def hasRectCollisions(self, testWidget, testRect):
+        hasWindowCollision = not self.rect().contains(testRect)
         if hasWindowCollision:
             return True
         rects = self.findChildren(RectWidget)
         hasRectCollision = any(
-            (not targetWidget or rect != targetWidget) and rect.geometry().intersects(targetRect) for rect in rects)
+            (not testWidget or rect != testWidget)
+            and rect.geometry().intersects(testRect) for rect in rects)
         return hasRectCollision
 
     def paintEvent(self, event):
