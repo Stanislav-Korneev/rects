@@ -1,0 +1,16 @@
+{
+  "windowTitle": "rects",
+  "windowPosition": [300, 300],
+  "windowSize": [500, 500],
+  "contentsMargins": [0, 0, 0, 0],
+
+  "sceneBackground": "#2f0157",
+  "connectorColor": "#fff",
+  "connectorWidth": 4,
+
+  "rectWidth": 100,
+  "rectHeight": 50,
+  "rectColors": ["#d954c5", "#5591ff", "#ff4d5e", "#8fffe1", "#fdff5d"],
+
+  "connectionButtonSize": 15
+}
