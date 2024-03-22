@@ -53,7 +53,7 @@ class Scene(QWidget):
             (not testWidget or rectWidget != testWidget)
             and rectWidget.geometry().intersects(testRect) for rectWidget in rectWidgets)
 
-    def drawLines(self, painter):
+    def drawConnections(self, painter):
         for rectWidget in self.findChildren(RectWidget):
             for linkedRect in rectWidget.linkedRectWidgets:
                 painter.drawLine(rectWidget.geometry().center(), linkedRect.geometry().center())
@@ -87,7 +87,7 @@ class Scene(QWidget):
             self.connectWidget.setStyleSheet(self.config['connectionButtonActiveStyle'])
 
         painter.fillRect(self.rect(), QColor(self.config['sceneBackground']))
-        self.drawLines(painter)
+        self.drawConnections(painter)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
