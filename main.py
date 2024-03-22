@@ -7,31 +7,33 @@ from PyQt6.QtGui import QPainter, QColor, QPen
 from PyQt6.QtWidgets import QApplication, QVBoxLayout, QWidget, QPushButton
 
 
-class ConnectionButton(QPushButton):
-    def __init__(self, parent=None, config=None):
-        super().__init__(parent)
-        self.size = config['connectionButtonSize']
-        posX = int((parent.width - self.size) / 2)
-        posY = int((parent.height - self.size) / 2)
-        self.setGeometry(posX, posY, self.size, self.size)
-
-
 class RectWidget(QWidget):
     def __init__(self, parent=None, pos=QPoint(50, 50), config=None):
         super().__init__(parent)
+        self.config = config
         self.width = config['rectWidth']
         self.height = config['rectHeight']
         self.color = random.choice(config['rectColors'])
         self.linkedRectWidgets = []
         self.lastMousePosition = None
 
-        self.connectionBtn = ConnectionButton(self, config)
+        self.createConnectionButton()
+        self.positionSelf(pos)
+        self.show()
+
+    def createConnectionButton(self):
+        connectionBtn = QPushButton(self)
+        connectionBtnSize = self.config['connectionButtonSize']
+        btnPosX = int((self.width - connectionBtnSize) / 2)
+        btnPosY = int((self.height - connectionBtnSize) / 2)
+        connectionBtn.setGeometry(btnPosX, btnPosY, connectionBtnSize, connectionBtnSize)
+        connectionBtn.clicked.connect(lambda: self.parent().handleConnection(self))
+        connectionBtn.show()
+
+    def positionSelf(self, pos):
         posX = int(pos.x() - self.width / 2)
         posY = int(pos.y() - self.height / 2)
         self.setGeometry(QRect(QPoint(posX, posY), QSize(self.width, self.height)))
-        self.connectionBtn.clicked.connect(lambda: parent.handleConnection(self))
-
-        self.show()
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -76,7 +78,8 @@ class Scene(QWidget):
         if hasWindowCollision:
             return True
         rects = self.findChildren(RectWidget)
-        hasRectCollision = any((not targetWidget or rect != targetWidget) and rect.geometry().intersects(targetRect) for rect in rects)
+        hasRectCollision = any(
+            (not targetWidget or rect != targetWidget) and rect.geometry().intersects(targetRect) for rect in rects)
         return hasRectCollision
 
     def paintEvent(self, event):
