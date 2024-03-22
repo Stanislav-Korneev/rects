@@ -1,4 +1,4 @@
-from PyQt6.QtCore import Qt, QRect, QSize
+from PyQt6.QtCore import Qt, QRect, QSize, QPoint
 from PyQt6.QtGui import QPainter, QColor, QPen
 from PyQt6.QtWidgets import QWidget
 
@@ -21,8 +21,10 @@ class Scene(QWidget):
 
     def addRect(self, pos):
         size = QSize(self.config['rectWidth'], self.config['rectHeight'])
+        halfRectSize = QPoint(int(self.config['rectWidth'] / 2), int(self.config['rectHeight'] / 2))
+        adjustedPos = pos - halfRectSize
         # we need testRect to be sure that there's enough place for a real widget to appear
-        testRect = QRect(pos, size)
+        testRect = QRect(adjustedPos, size)
         if self.hasRectCollisions(None, testRect):
             return
         newWidget = RectWidget(self, pos, self.config)
