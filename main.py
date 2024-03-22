@@ -1,17 +1,8 @@
 from PyQt6.QtWidgets import QApplication, QVBoxLayout, QWidget, QPushButton
-from PyQt6.QtGui import QPainter, QBrush, QColor, QPen
-from PyQt6.QtCore import Qt, QRect, QSize, QPoint, pyqtSignal, QLine
+from PyQt6.QtGui import QPainter, QColor, QPen
+from PyQt6.QtCore import Qt, QRect, QSize, QPoint
 
 import sys
-
-
-class ConnectionLine(QWidget):
-    def __init__(self, parent=None, widget1=None, widget2=None):
-        super().__init__(parent)
-        self.startWidget = widget1
-        self.endWidget = widget2
-        self.startPoint = widget1.geometry().center()
-        self.endPoint = widget2.geometry().center()
 
 
 class ConnectionButton(QPushButton):
@@ -58,6 +49,7 @@ class RectWidget(QWidget):
             return
         self.lastMousePosition = event.globalPosition().toPoint()
         self.move(self.pos() + delta)
+        self.parent().update()
 
     def mouseReleaseEvent(self, event):
         self.lastMousePosition = None
@@ -86,25 +78,17 @@ class Scene(QWidget):
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        painter.fillRect(self.rect(), QColor('lightBlue'))
         pen = QPen(QColor('black'))
         pen.setWidth(5)
         painter.setPen(pen)
 
+        painter.fillRect(self.rect(), QColor('lightBlue'))
         self.drawLines(painter)
 
     def drawLines(self, painter):
-        lines = self.findChildren(ConnectionLine)
-        for line in lines:
-            painter.drawLine(line.startPoint, line.endPoint)
-
-    def deleteLine(self, widget1, widget2):
-        lines = self.findChildren(ConnectionLine)
-        for line in lines:
-            if (line.startWidget == widget1 and line.endWidget == widget2) \
-                    or (line.startWidget == widget2 and line.endWidget == widget1):
-                line.deleteLater()
-                self.update()
+        for rect in self.findChildren(RectWidget):
+            for linkedRect in rect.linkedRectWidgets:
+                painter.drawLine(rect.geometry().center(), linkedRect.geometry().center())
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
@@ -126,19 +110,15 @@ class Scene(QWidget):
         connectHasTarget = targetWidget in self.connectWidget.linkedRectWidgets
         targetHasConnect = self.connectWidget in targetWidget.linkedRectWidgets
 
-        if connectHasTarget or targetHasConnect:
-            self.deleteLine(self.connectWidget, targetWidget)
-            if connectHasTarget:
-                self.connectWidget.linkedRectWidgets.remove(targetWidget)
-            if targetHasConnect:
-                targetWidget.linkedRectWidgets.remove(self.connectWidget)
-            self.connectWidget = None
-            return
+        if connectHasTarget:
+            self.connectWidget.linkedRectWidgets.remove(targetWidget)
+        elif targetHasConnect:
+            targetWidget.linkedRectWidgets.remove(self.connectWidget)
+        else:
+            self.connectWidget.linkedRectWidgets.append(targetWidget)
 
-        ConnectionLine(self, self.connectWidget, targetWidget)
-        self.update()
-        self.connectWidget.linkedRectWidgets.append(targetWidget)
         self.connectWidget = None
+        self.update()
 
 
 class MainWindow(QWidget):
